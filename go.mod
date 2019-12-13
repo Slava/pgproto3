@@ -1,4 +1,4 @@
-module github.com/jackc/pgproto3/v2
+module github.com/Slava/pgproto3/lazy-copydata-message
 
 go 1.12
 

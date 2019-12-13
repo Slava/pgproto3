@@ -9,8 +9,8 @@ import (
 
 // Frontend acts as a client for the PostgreSQL wire protocol version 3.
 type Frontend struct {
-	cr ChunkReader
-	w  io.Writer
+	r io.Reader
+	w io.Writer
 
 	// Backend message flyweights
 	authenticationOk                AuthenticationOk
@@ -48,8 +48,8 @@ type Frontend struct {
 }
 
 // NewFrontend creates a new Frontend.
-func NewFrontend(cr ChunkReader, w io.Writer) *Frontend {
-	return &Frontend{cr: cr, w: w}
+func NewFrontend(r io.Reader, w io.Writer) *Frontend {
+	return &Frontend{r: r, w: w}
 }
 
 // Send sends a message to the backend.
@@ -61,7 +61,11 @@ func (f *Frontend) Send(msg FrontendMessage) error {
 // Receive receives a message from the backend.
 func (f *Frontend) Receive() (BackendMessage, error) {
 	if !f.partialMsg {
-		header, err := f.cr.Next(5)
+		header := make([]byte, 5)
+		n, err := f.r.Read(header)
+		if n != 5 {
+			return nil, fmt.Errorf("Did not read the full message header")
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +75,19 @@ func (f *Frontend) Receive() (BackendMessage, error) {
 		f.partialMsg = true
 	}
 
-	msgBody, err := f.cr.Next(f.bodyLen)
+	if f.msgType == 'd' {
+		msg := &CopyData{
+			[]byte{},
+			io.LimitReader(f.r, int64(f.bodyLen)),
+		}
+		return msg, nil
+	}
+
+	msgBody := make([]byte, f.bodyLen)
+	n, err := f.r.Read(msgBody)
+	if n != f.bodyLen {
+		return nil, fmt.Errorf("Message declared len is longer than the actual message")
+	}
 	if err != nil {
 		return nil, err
 	}
