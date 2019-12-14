@@ -62,7 +62,7 @@ func (f *Frontend) Send(msg FrontendMessage) error {
 func (f *Frontend) Receive() (BackendMessage, error) {
 	if !f.partialMsg {
 		header := make([]byte, 5)
-		n, err := f.r.Read(header)
+		n, err := io.ReadFull(f.r, header)
 		if n != 5 {
 			return nil, fmt.Errorf("Did not read the full message header")
 		}
@@ -84,7 +84,7 @@ func (f *Frontend) Receive() (BackendMessage, error) {
 	}
 
 	msgBody := make([]byte, f.bodyLen)
-	n, err := f.r.Read(msgBody)
+	n, err := io.ReadFull(f.r, msgBody)
 	if n != f.bodyLen {
 		return nil, fmt.Errorf("Message declared len is longer than the actual message")
 	}
