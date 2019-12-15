@@ -78,8 +78,10 @@ func (f *Frontend) Receive() (BackendMessage, error) {
 	if f.msgType == 'd' {
 		msg := &CopyData{
 			[]byte{},
+			// This reader has to be read before the next Receive() call
 			io.LimitReader(f.r, int64(f.bodyLen)),
 		}
+		f.partialMsg = false
 		return msg, nil
 	}
 
