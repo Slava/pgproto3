@@ -63,11 +63,11 @@ func (f *Frontend) Receive() (BackendMessage, error) {
 	if !f.partialMsg {
 		header := make([]byte, 5)
 		n, err := io.ReadFull(f.r, header)
-		if n != 5 {
-			return nil, fmt.Errorf("Did not read the full message header")
-		}
 		if err != nil {
 			return nil, err
+		}
+		if n != 5 {
+			return nil, fmt.Errorf("Did not read the full message header, read=%d", n, err)
 		}
 
 		f.msgType = header[0]
