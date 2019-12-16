@@ -87,11 +87,11 @@ func (f *Frontend) Receive() (BackendMessage, error) {
 
 	msgBody := make([]byte, f.bodyLen)
 	n, err := io.ReadFull(f.r, msgBody)
-	if n != f.bodyLen {
-		return nil, fmt.Errorf("Message declared len is longer than the actual message")
-	}
 	if err != nil {
 		return nil, err
+	}
+	if n != f.bodyLen {
+		return nil, fmt.Errorf("Message declared len is longer than the actual message")
 	}
 
 	f.partialMsg = false
